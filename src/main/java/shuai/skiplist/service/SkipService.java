@@ -1,5 +1,6 @@
 package shuai.skiplist.service;
 
+import shuai.common.RangeSpec;
 import shuai.skiplist.entity.SkipList;
 import shuai.skiplist.entity.SkipListLevel;
 import shuai.skiplist.entity.SkipListNode;
@@ -15,7 +16,8 @@ public class SkipService {
 
     /**
      * 创建并初始化一个新的跳表
-     * @return  返回跳表
+     *
+     * @return 返回跳表
      */
     public SkipList create() {
         SkipList skipList = new SkipList();
@@ -32,9 +34,10 @@ public class SkipService {
 
     /**
      * 创建并返回一个新的跳表节点
+     *
      * @param level 节点数量
      * @param score 分值
-     * @return  跳表节点
+     * @return 跳表节点
      */
     public SkipListNode createNode(int level, double score) {
         SkipListNode skipListNode = new SkipListNode();
@@ -45,9 +48,10 @@ public class SkipService {
 
     /**
      * 在跳表中插入一个新节点。假定该元素尚不存在（由调用方强制实施）
+     *
      * @param skipList 跳表
-     * @param score 分值
-     * @return  节点
+     * @param score    分值
+     * @return 节点
      */
     public SkipListNode insert(SkipList skipList, double score) {
         // 记录寻找元素过程中，每层所跨越的节点数
@@ -118,6 +122,100 @@ public class SkipService {
         }
         // 更新跳跃表节点数量
         skipList.setLength(skipList.getLength() + 1);
+        return x;
+    }
+
+    public void delete(SkipList skipList, double score) {
+
+    }
+
+    private boolean valueGteMin(double score, RangeSpec range) {
+        return range.getMinex() > 0 ? (score > range.getMin()) : (score >= range.getMin());
+    }
+
+    private boolean valueLteMax(double score, RangeSpec range) {
+        return range.getMaxex() > 0 ? (score < range.getMax()) : (score <= range.getMax());
+    }
+
+    /**
+     * 如果集合的一部分在范围内，则返回
+     *
+     * @param skipList 集合
+     * @param range    范围
+     */
+    public Integer isInRange(SkipList skipList, RangeSpec range) {
+        SkipListNode x;
+        if (range.getMin() > range.getMax() || (range.getMin().equals(range.getMax()) && (range.getMinex() > 0 || range.getMaxex() > 0))) {
+            return 0;
+        }
+        x = skipList.getTail();
+        if (x == null || !valueGteMin(x.getScore(), range)) {
+            return 0;
+        }
+        x = skipList.getHeader().getLevel()[0].getForward();
+        if (x == null || !valueLteMax(x.getScore(), range)) {
+            return 0;
+        }
+        return 1;
+    }
+
+    /**
+     * 查找指定范围内包含的第一个节点。 如果范围内没有元素，则返回NULL
+     *
+     * @param skipList 跳表
+     * @param range    范围
+     * @return 节点
+     */
+    public SkipListNode firstInRange(SkipList skipList, RangeSpec range) {
+        SkipListNode x;
+        int j;
+
+        // 如果超出范围, 直接返回
+        if (isInRange(skipList, range) == 0) {
+            return null;
+        }
+
+        x = skipList.getHeader();
+        for (j = skipList.getLevel() - 1; j >= 0; j--) {
+            while (x.getLevel()[j].getForward() != null && valueGteMin(x.getLevel()[j].getForward().getScore(), range)) {
+                x = x.getLevel()[j].getForward();
+            }
+        }
+        // 这是一个内部范围，因此下一个节点不能为NULL
+        x = x.getLevel()[0].getForward();
+        // 检查 score <= max
+        if (!valueLteMax(x.getScore(), range)) {
+            return null;
+        }
+        return x;
+    }
+
+    /**
+     * 查找指定范围内包含的最后一个节点。 如果范围内没有元素，则返回NULL
+     *
+     * @param skipList 跳表
+     * @param range    范围
+     * @return 节点
+     */
+    public SkipListNode lastInRange(SkipList skipList, RangeSpec range) {
+        SkipListNode x;
+        int j;
+
+        // 如果超出范围, 直接返回
+        if (isInRange(skipList, range) == 0) {
+            return null;
+        }
+
+        x = skipList.getHeader();
+        for (j = skipList.getLevel() - 1; j >= 0; j--) {
+            while (x.getLevel()[j].getForward() != null && valueLteMax(x.getLevel()[j].getForward().getScore(), range)) {
+                x = x.getLevel()[j].getForward();
+            }
+        }
+
+        if (!valueGteMin(x.getScore(), range)) {
+            return null;
+        }
         return x;
     }
 
