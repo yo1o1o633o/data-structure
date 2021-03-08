@@ -2,8 +2,6 @@ package shuai.skiplist.entity;
 
 import lombok.Data;
 
-import java.util.List;
-
 /**
  * @author shuai.yang
  */
@@ -20,5 +18,5 @@ public class SkipListNode {
     /**
      * 层
      */
-    private List<SkipListLevel> level;
+    private SkipListLevel[] level;
 }

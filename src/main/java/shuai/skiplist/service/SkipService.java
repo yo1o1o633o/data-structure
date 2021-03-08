@@ -4,7 +4,6 @@ import shuai.skiplist.entity.SkipList;
 import shuai.skiplist.entity.SkipListLevel;
 import shuai.skiplist.entity.SkipListNode;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -24,7 +23,7 @@ public class SkipService {
         skipList.setLength(0L);
         skipList.setHeader(createNode(SKIP_LIST_MAX_LEVEL, 0));
         for (int i = 0; i < SKIP_LIST_MAX_LEVEL; i++) {
-            skipList.getHeader().getLevel().add(new SkipListLevel());
+            skipList.getHeader().getLevel()[i] = new SkipListLevel();
         }
         skipList.getHeader().setBackward(null);
         skipList.setTail(null);
@@ -40,7 +39,7 @@ public class SkipService {
     public SkipListNode createNode(int level, double score) {
         SkipListNode skipListNode = new SkipListNode();
         skipListNode.setScore(score);
-        skipListNode.setLevel(new ArrayList<SkipListLevel>());
+        skipListNode.setLevel(new SkipListLevel[level]);
         return skipListNode;
     }
 
@@ -61,15 +60,15 @@ public class SkipService {
         for (int i = skipList.getLevel() - 1; i >= 0; i--) {
             rank[i] = i == skipList.getLevel() - 1 ? 0 : rank[i + 1];
             // 右节点不为空
-            while (x.getLevel().get(i).getForward() != null &&
+            while (x.getLevel()[i].getForward() != null &&
                     // 右节点的 score 比给定 score 小
-                    (x.getLevel().get(i).getForward().getScore() < score ||
+                    (x.getLevel()[i].getForward().getScore() < score ||
                             // 右节点的 score 相同，但节点的 member 比输入 member 要小
-                            (x.getLevel().get(i).getForward().getScore() == score))) {
+                            (x.getLevel()[i].getForward().getScore() == score))) {
                 // 记录跨越了多少个元素
-                rank[i] += x.getLevel().get(i).getSpan();
+                rank[i] += x.getLevel()[i].getSpan();
                 // 继续向右前进
-                x = x.getLevel().get(i).getForward();
+                x = x.getLevel()[i].getForward();
             }
             // 保存访问节点
             update[i] = x;
@@ -85,7 +84,7 @@ public class SkipService {
             for (int i = skipList.getLevel(); i < level; i++) {
                 rank[i] = 0;
                 update[i] = skipList.getHeader();
-                update[i].getLevel().get(i).setSpan(skipList.getLength());
+                update[i].getLevel()[i].setSpan(skipList.getLength());
             }
             skipList.setLevel(level);
         }
@@ -95,24 +94,24 @@ public class SkipService {
         // 根据 update 和 rank 两个数组的资料，初始化新节点. 并设置相应的指针
         for (int i = 0; i < level; i++) {
             SkipListLevel skipListLevel = new SkipListLevel();
-            skipListLevel.setForward(update[i].getLevel().get(i).getForward());
-            skipListLevel.setSpan(update[i].getLevel().get(i).getSpan() - (rank[0] - rank[i]));
-            x.getLevel().add(skipListLevel);
+            skipListLevel.setForward(update[i].getLevel()[i].getForward());
+            skipListLevel.setSpan(update[i].getLevel()[i].getSpan() - (rank[0] - rank[i]));
+            x.getLevel()[i] = skipListLevel;
 
-            update[i].getLevel().get(i).setForward(x);
-            update[i].getLevel().get(i).setSpan((rank[0] - rank[i]) + 1);
+            update[i].getLevel()[i].setForward(x);
+            update[i].getLevel()[i].setSpan((rank[0] - rank[i]) + 1);
         }
 
         // 更新沿途访问节点的 span 值
         for (int i = level; i < skipList.getLevel(); i++) {
-            update[i].getLevel().get(i).setSpan(update[i].getLevel().get(i).getSpan() + 1);
+            update[i].getLevel()[i].setSpan(update[i].getLevel()[i].getSpan() + 1);
         }
 
         // 设置后退指针
         x.setBackward((update[0] == skipList.getHeader() ? null : update[0]));
         // 设置 x 的前进指针
-        if (x.getLevel().get(0).getForward() != null) {
-            x.getLevel().get(0).getForward().setBackward(x);
+        if (x.getLevel()[0].getForward() != null) {
+            x.getLevel()[0].getForward().setBackward(x);
         } else {
             // 这个是新的表尾节点
             skipList.setTail(x);
